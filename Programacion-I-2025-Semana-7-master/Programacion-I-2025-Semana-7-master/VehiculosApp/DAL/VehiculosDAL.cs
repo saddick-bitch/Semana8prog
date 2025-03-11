@@ -1,121 +1,194 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Data.SqlClient;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using VehiculosApp.DAL;
 using VehiculosApp.Modelos;
 
-namespace VehiculosApp.DAL
+namespace VehiculosApp
 {
-    public class VehiculosDAL
+    internal class Program
     {
-        // Crear una cadena de conexión hacia nuestra base de datos.
-        private static readonly string cadenaConexion = "Data Source=DESKTOP-F4UDN3G\\SQLEXPRESS;Initial Catalog=VehiculosDB;Integrated Security=True;";
-
-        // 1. Crear una método para mostrar un listado de vehiculos
-        public List<Vehiculo> ObtenerVehiculos()
+        static void Main(string[] args)
         {
-            // Creamos nuestra lista de vehiculos a retornar
-            List<Vehiculo> vehiculos = new List<Vehiculo>();
+            //// 
+            //Vehiculo vehiculo1 = new Automovil("Nissan", "Frontier", 2010, 2);
+            //Vehiculo vehiculo2 = new Motocicleta("Yamaha","YMT-03", 2015);
 
-            // 2. Creamos nuestra cadena de conexión
-            SqlConnection conexion = new SqlConnection(cadenaConexion);
+            //// Mostrar el detalle de cada objetos
+            //Console.WriteLine(vehiculo1.MostrarDetalles());
+            //Console.WriteLine(new string('-', 10));
+            //Console.WriteLine(vehiculo2.MostrarDetalles());
 
-            try
+            bool activado = true;
+
+            do
             {
-                // 3. Crear nuestro comando a ejecutar
-                string textoComando = "SP_SELECT_VEHICULOS";
+                Console.WriteLine("Bienvenido a la Consesionaria de Vehículos El Salvador");
+                Separador();
+                Console.WriteLine("Seleccione una opción: ");
+                Separador();
+                Console.WriteLine("1. Insertar un vehiculo\n2. Mostrar los vehiculos almacenados\n3. Actualizar un vehículo\n0. Salir");
+                Separador();
 
-                SqlCommand comando = new SqlCommand(textoComando, conexion);
+                int opcion = int.Parse(Console.ReadLine());
 
-                // 4. Especificamos que el comando es un Procedimiento Almacenado
-                comando.CommandType = System.Data.CommandType.StoredProcedure;
-
-                // 5. Abrir la conexión
-                conexion.Open();
-
-                // 6. Crear nuestro DataReader para leer la información
-
-                SqlDataReader lectura = comando.ExecuteReader();
-
-                // 7. Recorrer el resultado
-                while (lectura.Read())
+                switch (opcion)
                 {
-                    // Almacenar los vehiculos obtenidos en el listado de 'vehiculos'
-                    string marca = lectura.GetString(1);
-                    string modelo = lectura.GetString(2);
-                    int año = lectura.GetInt32(3);
-                    int puertas = lectura.GetInt32(4);
-                    string tipo = lectura.GetString(5);
+                    case 0:
+                        Console.WriteLine("Gracias por visitarnos, lo esperamos pronto");
+                        activado = false;
+                        break;
+                    case 1:
+                        InsertarVehiculo();
+                        break;
+                    case 2:
+                        MostrarVehiculos();
+                        break;
+                    case 3:
+                        ActualizarVehiculo();
+                        break;
+                    default:
+                        Console.WriteLine("Opción incorrecta vuelve a intentarlo");
+                        break;
+                }
+                Separador();
 
-                    if (tipo.Equals("Automovil"))
-                    {
-                        vehiculos.Add(new Automovil(marca, modelo, año, puertas));
-                    }
-                    else
-                    {
-                        vehiculos.Add(new Motocicleta(marca, modelo, año));
-                    }
-                }                
-            }
-            catch (Exception)
+            } while (activado);
+
+            Console.ReadLine();
+        }
+
+        private static void MostrarVehiculos()
+        {
+            VehiculosDAL vehiculoDAL = new VehiculosDAL();
+
+            List<Vehiculo> vehiculos = vehiculoDAL.ObtenerVehiculos();
+            Separador();
+            foreach (Vehiculo vehiculo in vehiculos)
             {
-                throw;
+                Console.WriteLine(vehiculo.MostrarDetalles());
+                Separador();
             }
-            finally
+            Separador();
+        }
+
+        private static void InsertarVehiculo()
+        {
+            VehiculosDAL vehiculoDAL = new VehiculosDAL();
+
+            Console.Write("Escribe la Marca: ");
+            string marca = Console.ReadLine();
+
+            Console.Write("Escribe el Modelo: ");
+            string modelo = Console.ReadLine();
+
+            Console.Write("Digital el Año: ");
+            int año = int.Parse(Console.ReadLine());
+
+            Console.Write("Elige el Tipo de Vehículo (Automovil/Motocicleta): ");
+            string tipo = Console.ReadLine();
+
+            if (tipo.Equals("Automovil"))
             {
-                conexion.Close();
+                Console.Write("Digital el N° de Puertas: ");
+                int puertas = int.Parse(Console.ReadLine());
+
+                vehiculoDAL.GuardarVehiculo(marca, modelo, año, tipo, puertas);
+            }
+            else
+            {
+                vehiculoDAL.GuardarVehiculo(marca, modelo, año, tipo);
             }           
+        }
 
-            // 8. Retornar el resultado
-            return vehiculos;
-        }        
-        
-        // 2. Crear un método para almacenar un vehiculo
-        public void GuardarVehiculo(string marca, string modelo, int año, string tipo, int puertas = 0) // párametro opcional
+        private static void ActualizarVehiculo()
         {
-            // Crear la conexión con SqlConnection
-            SqlConnection conexion = new SqlConnection(cadenaConexion);
+            // Primero mostrar los vehículos para que el usuario pueda ver los IDs
+            Console.WriteLine("Vehículos disponibles para actualizar:");
+            MostrarVehiculos();
 
-            try
+            VehiculosDAL vehiculoDAL = new VehiculosDAL();
+
+            // Solicitar el ID del vehículo a actualizar
+            Console.Write("Ingrese el ID del vehículo que desea actualizar: ");
+            int id = int.Parse(Console.ReadLine());
+
+            // Solicitar los nuevos datos
+            Console.Write("Nueva Marca (deje en blanco para mantener actual): ");
+            string marca = Console.ReadLine();
+
+            Console.Write("Nuevo Modelo (deje en blanco para mantener actual): ");
+            string modelo = Console.ReadLine();
+
+            Console.Write("Nuevo Año (0 para mantener actual): ");
+            string añoStr = Console.ReadLine();
+            int año = !string.IsNullOrEmpty(añoStr) ? int.Parse(añoStr) : 0;
+
+            Console.Write("Nuevo Tipo de Vehículo (Automovil/Motocicleta) (deje en blanco para mantener actual): ");
+            string tipo = Console.ReadLine();
+
+            int puertas = 0;
+            if (tipo.Equals("Automovil") || string.IsNullOrEmpty(tipo))
             {
-                // Creamos el comando
-                string textoComando = "SP_CREAR_VEHICULOS";
+                Console.Write("Nuevo N° de Puertas (0 para mantener actual): ");
+                string puertasStr = Console.ReadLine();
+                puertas = !string.IsNullOrEmpty(puertasStr) ? int.Parse(puertasStr) : 0;
+            }
 
-                SqlCommand comando = new SqlCommand(textoComando, conexion);
+            // Obtener los datos actuales del vehículo para completar los campos vacíos
+            List<Vehiculo> vehiculos = vehiculoDAL.ObtenerVehiculos();
+            Vehiculo vehiculoActual = vehiculos.FirstOrDefault(v => v.Id == id);
 
-                comando.CommandType = System.Data.CommandType.StoredProcedure;
+            if (vehiculoActual == null)
+            {
+                Console.WriteLine("No se encontró un vehículo con el ID especificado.");
+                return;
+            }
 
-                comando.Parameters.AddWithValue("@Marca", marca);
-                comando.Parameters.AddWithValue("@Modelo", modelo);
-                comando.Parameters.AddWithValue("@Año", año);
-                comando.Parameters.AddWithValue("@NumeroPuertas", puertas);
-                comando.Parameters.AddWithValue("@TipoVehiculo", tipo);
+            // Completar los datos que no se actualizaron
+            if (string.IsNullOrEmpty(marca))
+                marca = ((dynamic)vehiculoActual).Marca;
 
-                // Abrir la conexion
-                conexion.Open();
+            if (string.IsNullOrEmpty(modelo))
+                modelo = ((dynamic)vehiculoActual).Modelo;
 
-                // Ejecutamos el comandod y guardamos el Id resultado
-                int resultado = Convert.ToInt32(comando.ExecuteScalar());
+            if (año == 0)
+                año = ((dynamic)vehiculoActual).Año;
 
-                if (resultado > 0) {
-                    Console.WriteLine("El vehículo fue registrado con exito!!");
-                }
+            if (string.IsNullOrEmpty(tipo))
+            {
+                if (vehiculoActual is Automovil)
+                    tipo = "Automovil";
                 else
-                {
-                    Console.WriteLine("Ocurrio un error en el registro");
-                }
+                    tipo = "Motocicleta";
             }
-            catch (Exception)
+
+            if (puertas == 0 && tipo.Equals("Automovil"))
             {
-                Console.WriteLine("Ocurrio un excepción");
+                if (vehiculoActual is Automovil autoActual)
+                    puertas = ((dynamic)autoActual).NumeroPuertas;
+                else
+                    puertas = 4; // Valor predeterminado
             }
-            finally
+
+            // Actualizar el vehículo
+            bool actualizado = vehiculoDAL.ActualizarVehiculo(id, marca, modelo, año, tipo, puertas);
+
+            if (actualizado)
             {
-                conexion.Close();
+                Console.WriteLine("Vehículo actualizado correctamente.");
             }
+            else
+            {
+                Console.WriteLine("No se pudo actualizar el vehículo.");
+            }
+        }
+
+        private static void Separador()
+        {
+            Console.WriteLine(new string('-', 20));
         }
     }
 }

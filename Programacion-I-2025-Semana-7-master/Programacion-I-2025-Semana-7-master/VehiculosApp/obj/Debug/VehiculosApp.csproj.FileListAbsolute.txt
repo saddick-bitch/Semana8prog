@@ -1,0 +1,2 @@
+C:\Users\gh709\Documents\GitHub\Semana8prog\Programacion-I-2025-Semana-7-master\Programacion-I-2025-Semana-7-master\VehiculosApp\obj\Debug\VehiculosApp.csproj.AssemblyReference.cache
+C:\Users\gh709\Documents\GitHub\Semana8prog\Programacion-I-2025-Semana-7-master\Programacion-I-2025-Semana-7-master\VehiculosApp\obj\Debug\VehiculosApp.csproj.CoreCompileInputs.cache
