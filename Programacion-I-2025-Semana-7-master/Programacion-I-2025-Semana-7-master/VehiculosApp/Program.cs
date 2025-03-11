@@ -12,27 +12,24 @@ namespace VehiculosApp
     {
         static void Main(string[] args)
         {
-            //// 
-            //Vehiculo vehiculo1 = new Automovil("Nissan", "Frontier", 2010, 2);
-            //Vehiculo vehiculo2 = new Motocicleta("Yamaha","YMT-03", 2015);
-
-            //// Mostrar el detalle de cada objetos
-            //Console.WriteLine(vehiculo1.MostrarDetalles());
-            //Console.WriteLine(new string('-', 10));
-            //Console.WriteLine(vehiculo2.MostrarDetalles());
-
             bool activado = true;
 
             do
             {
-                Console.WriteLine("Bienvenido a la Consesionaria de Vehículos El Salvador");
+                Console.WriteLine("Bienvenido a la Concesionaria de Vehículos El Salvador");
                 Separador();
                 Console.WriteLine("Seleccione una opción: ");
                 Separador();
                 Console.WriteLine("1. Insertar un vehiculo\n2. Mostrar los vehiculos almacenados\n3. Actualizar un vehículo\n0. Salir");
                 Separador();
 
-                int opcion = int.Parse(Console.ReadLine());
+                int opcion;
+                if (!int.TryParse(Console.ReadLine(), out opcion))
+                {
+                    Console.WriteLine("Entrada inválida. Ingrese un número.");
+                    Separador();
+                    continue;
+                }
 
                 switch (opcion)
                 {
@@ -65,13 +62,18 @@ namespace VehiculosApp
             VehiculosDAL vehiculoDAL = new VehiculosDAL();
 
             List<Vehiculo> vehiculos = vehiculoDAL.ObtenerVehiculos();
+            if (vehiculos.Count == 0)
+            {
+                Console.WriteLine("No hay vehículos para mostrar.");
+                return;
+            }
+
             Separador();
             foreach (Vehiculo vehiculo in vehiculos)
             {
                 Console.WriteLine(vehiculo.MostrarDetalles());
                 Separador();
             }
-            Separador();
         }
 
         private static void InsertarVehiculo()
@@ -85,15 +87,25 @@ namespace VehiculosApp
             string modelo = Console.ReadLine();
 
             Console.Write("Digital el Año: ");
-            int año = int.Parse(Console.ReadLine());
+            int año;
+            if (!int.TryParse(Console.ReadLine(), out año))
+            {
+                Console.WriteLine("Año inválido. Se usará 2025 por defecto.");
+                año = 2025;
+            }
 
             Console.Write("Elige el Tipo de Vehículo (Automovil/Motocicleta): ");
             string tipo = Console.ReadLine();
 
-            if (tipo.Equals("Automovil"))
+            if (tipo.Equals("Automovil", StringComparison.OrdinalIgnoreCase))
             {
                 Console.Write("Digital el N° de Puertas: ");
-                int puertas = int.Parse(Console.ReadLine());
+                int puertas;
+                if (!int.TryParse(Console.ReadLine(), out puertas))
+                {
+                    Console.WriteLine("Número de puertas inválido. Se usará 4 por defecto.");
+                    puertas = 4;
+                }
 
                 vehiculoDAL.GuardarVehiculo(marca, modelo, año, tipo, puertas);
             }
@@ -110,10 +122,31 @@ namespace VehiculosApp
             MostrarVehiculos();
 
             VehiculosDAL vehiculoDAL = new VehiculosDAL();
+            List<Vehiculo> vehiculos = vehiculoDAL.ObtenerVehiculos();
+            
+            if (vehiculos.Count == 0)
+            {
+                Console.WriteLine("No hay vehículos para actualizar.");
+                return;
+            }
 
             // Solicitar el ID del vehículo a actualizar
             Console.Write("Ingrese el ID del vehículo que desea actualizar: ");
-            int id = int.Parse(Console.ReadLine());
+            int id;
+            if (!int.TryParse(Console.ReadLine(), out id))
+            {
+                Console.WriteLine("ID inválido.");
+                return;
+            }
+
+            // Obtener los datos actuales del vehículo para completar los campos vacíos
+            Vehiculo vehiculoActual = vehiculos.FirstOrDefault(v => v.Id == id);
+
+            if (vehiculoActual == null)
+            {
+                Console.WriteLine("No se encontró un vehículo con el ID especificado.");
+                return;
+            }
 
             // Solicitar los nuevos datos
             Console.Write("Nueva Marca (deje en blanco para mantener actual): ");
@@ -130,32 +163,22 @@ namespace VehiculosApp
             string tipo = Console.ReadLine();
 
             int puertas = 0;
-            if (tipo.Equals("Automovil") || string.IsNullOrEmpty(tipo))
+            if (tipo.Equals("Automovil", StringComparison.OrdinalIgnoreCase) || string.IsNullOrEmpty(tipo))
             {
                 Console.Write("Nuevo N° de Puertas (0 para mantener actual): ");
                 string puertasStr = Console.ReadLine();
                 puertas = !string.IsNullOrEmpty(puertasStr) ? int.Parse(puertasStr) : 0;
             }
 
-            // Obtener los datos actuales del vehículo para completar los campos vacíos
-            List<Vehiculo> vehiculos = vehiculoDAL.ObtenerVehiculos();
-            Vehiculo vehiculoActual = vehiculos.FirstOrDefault(v => v.Id == id);
-
-            if (vehiculoActual == null)
-            {
-                Console.WriteLine("No se encontró un vehículo con el ID especificado.");
-                return;
-            }
-
             // Completar los datos que no se actualizaron
             if (string.IsNullOrEmpty(marca))
-                marca = ((dynamic)vehiculoActual).Marca;
+                marca = vehiculoActual.Marca;
 
             if (string.IsNullOrEmpty(modelo))
-                modelo = ((dynamic)vehiculoActual).Modelo;
+                modelo = vehiculoActual.Modelo;
 
             if (año == 0)
-                año = ((dynamic)vehiculoActual).Año;
+                año = vehiculoActual.Año;
 
             if (string.IsNullOrEmpty(tipo))
             {
@@ -165,10 +188,10 @@ namespace VehiculosApp
                     tipo = "Motocicleta";
             }
 
-            if (puertas == 0 && tipo.Equals("Automovil"))
+            if (puertas == 0 && tipo.Equals("Automovil", StringComparison.OrdinalIgnoreCase))
             {
                 if (vehiculoActual is Automovil autoActual)
-                    puertas = ((dynamic)autoActual).NumeroPuertas;
+                    puertas = autoActual.NumeroPuertas;
                 else
                     puertas = 4; // Valor predeterminado
             }
